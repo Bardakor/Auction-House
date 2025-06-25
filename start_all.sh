@@ -21,6 +21,10 @@ check_command pip
 echo ""
 echo "📦 Installing backend dependencies..."
 cd backend
+
+# Activate virtual environment
+source venv/bin/activate
+
 if [ ! -f .deps_installed ] || [ requirements.txt -nt .deps_installed ]; then
     pip install -r requirements.txt
     touch .deps_installed
@@ -50,25 +54,25 @@ cd backend
 # Start services in background
 echo "  • Starting User Service (port 8001)..."
 cd services/user-service
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8001 > ../../logs/user-service.log 2>&1 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8001 > ../../logs/user-service.log 2>&1 &
 USER_PID=$!
 cd ../..
 
 echo "  • Starting Auction Service (port 8002)..."
 cd services/auction-service
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8002 > ../../logs/auction-service.log 2>&1 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8002 > ../../logs/auction-service.log 2>&1 &
 AUCTION_PID=$!
 cd ../..
 
 echo "  • Starting Bid Service (port 8003)..."
 cd services/bid-service
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8003 > ../../logs/bid-service.log 2>&1 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8003 > ../../logs/bid-service.log 2>&1 &
 BID_PID=$!
 cd ../..
 
 echo "  • Starting Auth Gateway (port 8000)..."
 cd services/auth-gateway
-python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 > ../../logs/auth-gateway.log 2>&1 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 > ../../logs/auth-gateway.log 2>&1 &
 GATEWAY_PID=$!
 cd ../..
 

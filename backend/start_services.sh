@@ -3,6 +3,9 @@
 # Real-Time Auction Platform - Start All Services
 echo "Starting Auction Platform Microservices..."
 
+# Activate virtual environment
+source venv/bin/activate
+
 # Install dependencies if requirements.txt is newer than the last install
 if [ ! -f .deps_installed ] || [ requirements.txt -nt .deps_installed ]; then
     echo "Installing Python dependencies..."
@@ -13,25 +16,25 @@ fi
 # Start services in background
 echo "Starting User Service on port 8001..."
 cd services/user-service
-python -m uvicorn main:app --host 0.0.0.0 --port 8001 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8001 &
 USER_PID=$!
 cd ../..
 
 echo "Starting Auction Service on port 8002..."
 cd services/auction-service
-python -m uvicorn main:app --host 0.0.0.0 --port 8002 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8002 &
 AUCTION_PID=$!
 cd ../..
 
 echo "Starting Bid Service on port 8003..."
 cd services/bid-service
-python -m uvicorn main:app --host 0.0.0.0 --port 8003 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8003 &
 BID_PID=$!
 cd ../..
 
 echo "Starting Auth Gateway on port 8000..."
 cd services/auth-gateway
-python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
+../../venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 8000 &
 GATEWAY_PID=$!
 cd ../..
 

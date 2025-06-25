@@ -6,6 +6,7 @@ import { Navigation } from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ClientOnly } from '@/components/ClientOnly';
 import { apiClient, Auction } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -69,26 +70,34 @@ export default function HomePage() {
             Discover amazing items, place bids in real-time, and win exciting auctions. 
             Join our community of buyers and sellers today.
           </p>
-          {!user && (
+          <ClientOnly fallback={
             <div className="space-x-4">
-              <Link href="/register">
-                <Button size="lg">Get Started</Button>
-              </Link>
               <Link href="/auctions">
                 <Button variant="outline" size="lg">Browse Auctions</Button>
               </Link>
             </div>
-          )}
-          {user && (
-            <div className="space-x-4">
-              <Link href="/create-auction">
-                <Button size="lg">Create Auction</Button>
-              </Link>
-              <Link href="/auctions">
-                <Button variant="outline" size="lg">Browse Auctions</Button>
-              </Link>
-            </div>
-          )}
+          }>
+            {!user && (
+              <div className="space-x-4">
+                <Link href="/register">
+                  <Button size="lg">Get Started</Button>
+                </Link>
+                <Link href="/auctions">
+                  <Button variant="outline" size="lg">Browse Auctions</Button>
+                </Link>
+              </div>
+            )}
+            {user && (
+              <div className="space-x-4">
+                <Link href="/create-auction">
+                  <Button size="lg">Create Auction</Button>
+                </Link>
+                <Link href="/auctions">
+                  <Button variant="outline" size="lg">Browse Auctions</Button>
+                </Link>
+              </div>
+            )}
+          </ClientOnly>
         </div>
 
         {/* Features Section */}
@@ -165,7 +174,7 @@ export default function HomePage() {
                         Current Price: <span className="font-semibold text-green-600">${auction.current_price}</span>
                       </p>
                       <p className="text-sm text-gray-600">
-                        Ends: {new Date(auction.ends_at).toLocaleDateString()}
+                        Ends: {new Date(auction.ends_at).toLocaleDateString('en-US')}
                       </p>
                     </div>
                     <Link href={`/auctions/${auction.id}`} className="block mt-4">
@@ -178,11 +187,13 @@ export default function HomePage() {
           ) : (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">No auctions available yet.</p>
-              {user && (
-                <Link href="/create-auction">
-                  <Button>Create the First Auction</Button>
-                </Link>
-              )}
+              <ClientOnly>
+                {user && (
+                  <Link href="/create-auction">
+                    <Button>Create the First Auction</Button>
+                  </Link>
+                )}
+              </ClientOnly>
             </div>
           )}
         </div>

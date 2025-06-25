@@ -34,16 +34,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!mounted) return;
     
     // Check for existing token and user data
-    const token = localStorage.getItem('auth_token');
-    const userData = localStorage.getItem('user_data');
-    
-    if (token && userData) {
-      try {
+    try {
+      const token = localStorage.getItem('auth_token');
+      const userData = localStorage.getItem('user_data');
+      
+      if (token && userData) {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         apiClient.setToken(token);
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
+      }
+    } catch (error) {
+      console.error('Failed to parse user data:', error);
+      // Only clear localStorage if mounted to avoid hydration issues
+      if (typeof window !== 'undefined') {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('user_data');
       }
@@ -58,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
         setUser(userData);
-        if (mounted) {
+        if (mounted && typeof window !== 'undefined') {
           localStorage.setItem('user_data', JSON.stringify(userData));
         }
         return true;
@@ -76,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (response.success && response.data) {
         const { user: userData, token } = response.data;
         setUser(userData);
-        if (mounted) {
+        if (mounted && typeof window !== 'undefined') {
           localStorage.setItem('user_data', JSON.stringify(userData));
         }
         return true;
@@ -91,15 +94,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     apiClient.logout();
-    if (mounted) {
+    if (mounted && typeof window !== 'undefined') {
       localStorage.removeItem('user_data');
     }
   };
-
-  // Don't render children until mounted to prevent hydration mismatch
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
