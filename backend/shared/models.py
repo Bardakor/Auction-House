@@ -8,7 +8,6 @@ class AuctionStatus(str, Enum):
     LIVE = "live"
     ENDED = "ended"
 
-# User Models
 class UserCreate(BaseModel):
     name: str
     email: str
@@ -27,7 +26,6 @@ class UserResponse(BaseModel):
     user: User
     token: str
 
-# Auction Models
 class AuctionCreate(BaseModel):
     title: str
     description: str
@@ -44,7 +42,6 @@ class Auction(BaseModel):
     ends_at: datetime
     owner_id: int
 
-# Bid Models
 class BidCreate(BaseModel):
     auction_id: int
     amount: float
@@ -56,7 +53,6 @@ class Bid(BaseModel):
     amount: float
     timestamp: datetime
 
-# API Response Models
 class ApiResponse(BaseModel):
     success: bool
     message: str

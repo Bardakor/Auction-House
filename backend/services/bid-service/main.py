@@ -7,7 +7,6 @@ import httpx
 from datetime import datetime
 from typing import Optional
 
-# Add shared modules to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../shared'))
 
 from models import BidCreate, Bid, ApiResponse
@@ -15,7 +14,6 @@ from auth import verify_token, extract_user_id
 
 app = FastAPI(title="Bid Service", version="1.0.0")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -24,7 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database setup
 DATABASE = "bids.db"
 AUCTION_SERVICE_URL = "http://localhost:8002"
 
@@ -90,27 +87,22 @@ async def startup_event():
 async def place_bid(bid_data: BidCreate, user_id: int = Depends(get_current_user)):
     conn = get_db()
     try:
-        # Get auction details
         auction = await get_auction_details(bid_data.auction_id)
         if not auction:
             raise HTTPException(status_code=404, detail="Auction not found")
         
-        # Check if auction is live
         if auction['status'] != 'live':
             raise HTTPException(status_code=400, detail="Auction is not active")
         
-        # Check if bid amount is higher than current price
         if bid_data.amount <= auction['current_price']:
             raise HTTPException(
                 status_code=400, 
                 detail=f"Bid amount must be higher than current price: ${auction['current_price']}"
             )
         
-        # Check if user is not the auction owner
         if user_id == auction['owner_id']:
             raise HTTPException(status_code=400, detail="Cannot bid on your own auction")
         
-        # Place the bid
         cursor = conn.execute("""
             INSERT INTO bids (user_id, auction_id, amount, timestamp)
             VALUES (?, ?, ?, ?)
@@ -119,7 +111,6 @@ async def place_bid(bid_data: BidCreate, user_id: int = Depends(get_current_user
         
         bid_id = cursor.lastrowid
         
-        # Update auction current price
         await update_auction_price(bid_data.auction_id, bid_data.amount)
         
         return ApiResponse(

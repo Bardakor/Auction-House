@@ -5,14 +5,12 @@ import os
 import sys
 from typing import Optional
 
-# Add shared modules to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../shared'))
 
 from auth import verify_token
 
 app = FastAPI(title="Auth Gateway", version="1.0.0")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,14 +19,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Service URLs
 SERVICES = {
     "user": "http://localhost:8001",
     "auction": "http://localhost:8002",
     "bid": "http://localhost:8003"
 }
 
-# Protected routes that require authentication
 PROTECTED_ROUTES = [
     "/auctions",
     "/bids"
@@ -37,7 +33,7 @@ PROTECTED_ROUTES = [
 def requires_auth(path: str, method: str) -> bool:
     """Check if a route requires authentication"""
     if method == "GET" and path.startswith("/auctions"):
-        return False  # GET auctions is public
+        return False
     
     for protected in PROTECTED_ROUTES:
         if path.startswith(protected):
@@ -59,17 +55,14 @@ async def validate_token(authorization: str = Header(None)):
 async def forward_request(service_url: str, path: str, method: str, request: Request, headers: dict = None):
     """Forward request to the appropriate microservice"""
     
-    # Prepare headers
     forward_headers = {}
     if headers:
         forward_headers.update(headers)
     
-    # Get request body if it exists
     body = None
     if method in ["POST", "PUT", "PATCH"]:
         body = await request.body()
     
-    # Get query parameters
     query_params = str(request.url.query) if request.url.query else ""
     full_url = f"{service_url}{path}"
     if query_params:
@@ -96,7 +89,6 @@ async def forward_request(service_url: str, path: str, method: str, request: Req
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gateway error: {str(e)}")
 
-# Auth routes (no auth required)
 @app.post("/register")
 async def register(request: Request):
     result = await forward_request(SERVICES["user"], "/register", "POST", request)
@@ -107,13 +99,11 @@ async def login(request: Request):
     result = await forward_request(SERVICES["user"], "/login", "POST", request)
     return result["content"]
 
-# User routes
 @app.get("/users/{user_id}")
 async def get_user(user_id: int, request: Request):
     result = await forward_request(SERVICES["user"], f"/users/{user_id}", "GET", request)
     return result["content"]
 
-# Auction routes
 @app.get("/auctions")
 async def get_auctions(request: Request):
     result = await forward_request(SERVICES["auction"], "/auctions", "GET", request)
@@ -126,10 +116,7 @@ async def get_auction(auction_id: int, request: Request):
 
 @app.post("/auctions")
 async def create_auction(request: Request, authorization: str = Header(...)):
-    # Validate token
     await validate_token(authorization)
-    
-    # Forward with authorization header
     result = await forward_request(
         SERVICES["auction"], 
         "/auctions", 
@@ -141,10 +128,7 @@ async def create_auction(request: Request, authorization: str = Header(...)):
 
 @app.delete("/auctions/{auction_id}")
 async def delete_auction(auction_id: int, request: Request, authorization: str = Header(...)):
-    # Validate token
     await validate_token(authorization)
-    
-    # Forward with authorization header
     result = await forward_request(
         SERVICES["auction"], 
         f"/auctions/{auction_id}", 
@@ -156,10 +140,7 @@ async def delete_auction(auction_id: int, request: Request, authorization: str =
 
 @app.patch("/auctions/{auction_id}/status")
 async def update_auction_status(auction_id: int, request: Request, authorization: str = Header(...)):
-    # Validate token
     await validate_token(authorization)
-    
-    # Forward with authorization header
     result = await forward_request(
         SERVICES["auction"], 
         f"/auctions/{auction_id}/status", 
@@ -174,13 +155,9 @@ async def auto_update_auction_status(request: Request):
     result = await forward_request(SERVICES["auction"], "/auctions/manage/auto-update-status", "GET", request)
     return result["content"]
 
-# Bid routes
 @app.post("/bids")
 async def place_bid(request: Request, authorization: str = Header(...)):
-    # Validate token
     await validate_token(authorization)
-    
-    # Forward with authorization header
     result = await forward_request(
         SERVICES["bid"], 
         "/bids", 
@@ -205,12 +182,10 @@ async def get_highest_bid(auction_id: int, request: Request):
     result = await forward_request(SERVICES["bid"], f"/bids/highest/{auction_id}", "GET", request)
     return result["content"]
 
-# Health check
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "auth-gateway"}
 
-# Service health checks
 @app.get("/health/services")
 async def services_health():
     health_status = {}

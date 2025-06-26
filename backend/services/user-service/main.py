@@ -5,7 +5,6 @@ import hashlib
 import os
 import sys
 
-# Add shared modules to path
 sys.path.append(os.path.join(os.path.dirname(__file__), '../../shared'))
 
 from models import UserCreate, UserLogin, User, UserResponse, ApiResponse
@@ -13,7 +12,6 @@ from auth import create_access_token
 
 app = FastAPI(title="User Service", version="1.0.0")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,7 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database setup
 DATABASE = "users.db"
 
 def init_db():
@@ -54,7 +51,6 @@ async def startup_event():
 async def register(user_data: UserCreate):
     conn = get_db()
     try:
-        # Check if user already exists
         existing_user = conn.execute(
             "SELECT id FROM users WHERE email = ?", 
             (user_data.email,)
@@ -63,7 +59,6 @@ async def register(user_data: UserCreate):
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already registered")
         
-        # Hash password and create user
         password_hash = hash_password(user_data.password)
         cursor = conn.execute(
             "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
@@ -73,7 +68,6 @@ async def register(user_data: UserCreate):
         
         user_id = cursor.lastrowid
         
-        # Create JWT token
         token = create_access_token({"user_id": user_id, "email": user_data.email})
         
         return ApiResponse(
@@ -100,7 +94,6 @@ async def register(user_data: UserCreate):
 async def login(user_data: UserLogin):
     conn = get_db()
     try:
-        # Find user by email
         user = conn.execute(
             "SELECT id, name, email, password_hash FROM users WHERE email = ?",
             (user_data.email,)
@@ -109,12 +102,10 @@ async def login(user_data: UserLogin):
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Verify password
         password_hash = hash_password(user_data.password)
         if password_hash != user['password_hash']:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         
-        # Create JWT token
         token = create_access_token({"user_id": user['id'], "email": user['email']})
         
         return ApiResponse(

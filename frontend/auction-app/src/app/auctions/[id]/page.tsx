@@ -24,16 +24,19 @@ export default function AuctionDetailPage() {
   const [bidAmount, setBidAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [bidLoading, setBidLoading] = useState(false);
+  const [winner, setWinner] = useState<any>(null);
 
   useEffect(() => {
     if (auctionId) {
       fetchAuctionDetails();
       fetchBids();
+      fetchWinner();
       
       // Set up polling for real-time updates
       const interval = setInterval(() => {
         fetchAuctionDetails();
         fetchBids();
+        fetchWinner();
       }, 5000);
 
       return () => clearInterval(interval);
@@ -62,6 +65,17 @@ export default function AuctionDetailPage() {
       }
     } catch (error) {
       console.error('Failed to fetch bids:', error);
+    }
+  };
+
+  const fetchWinner = async () => {
+    try {
+      const response = await apiClient.get(`/auctions/${auctionId}/winner`);
+      if (response.success && response.data?.winner) {
+        setWinner(response.data.winner);
+      }
+    } catch (error) {
+      console.error('Failed to fetch winner:', error);
     }
   };
 
@@ -127,12 +141,29 @@ export default function AuctionDetailPage() {
       if (response.success) {
         toast.success('Auction statuses updated automatically');
         await fetchAuctionDetails();
+        await fetchWinner();
       } else {
         toast.error(response.message || 'Failed to auto-update');
       }
     } catch (error) {
       console.error('Auto-update error:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to auto-update');
+    }
+  };
+
+  const endAuctionWithWinner = async () => {
+    try {
+      const response = await apiClient.patch(`/auctions/${auctionId}/end-with-winner`);
+      if (response.success) {
+        toast.success('Auction ended successfully!');
+        await fetchAuctionDetails();
+        await fetchWinner();
+      } else {
+        toast.error(response.message || 'Failed to end auction');
+      }
+    } catch (error) {
+      console.error('End auction error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to end auction');
     }
   };
 
@@ -246,6 +277,22 @@ export default function AuctionDetailPage() {
                           {new Date(auction.ends_at).toLocaleString()}
                         </span>
                       </div>
+                      {auction.status === 'ended' && winner && (
+                        <>
+                          <Separator className="my-3" />
+                          <div className="bg-green-50 p-3 rounded-md">
+                            <h4 className="font-semibold text-green-800 mb-2">🎉 Winner!</h4>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-700">Winner ID:</span>
+                              <span className="font-semibold text-green-800">{winner.winner_id}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-green-700">Winning Bid:</span>
+                              <span className="font-semibold text-green-800">${winner.winning_amount}</span>
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -356,7 +403,7 @@ export default function AuctionDetailPage() {
               <CardTitle>Admin Controls</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   onClick={() => updateAuctionStatus('live')}
                   disabled={auction.status === 'live' || auction.status === 'ended'}
@@ -374,6 +421,15 @@ export default function AuctionDetailPage() {
                   End Auction
                 </Button>
                 <Button
+                  onClick={endAuctionWithWinner}
+                  disabled={auction.status === 'ended'}
+                  variant="default"
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  End & Notify Winner
+                </Button>
+                <Button
                   onClick={autoUpdateStatuses}
                   variant="outline"
                   size="sm"
@@ -384,6 +440,13 @@ export default function AuctionDetailPage() {
               <p className="text-sm text-muted-foreground">
                 Current status: <span className="font-medium">{auction.status}</span>
               </p>
+              {auction.status === 'ended' && winner && (
+                <div className="bg-green-50 p-3 rounded-md border border-green-200">
+                  <p className="text-sm text-green-800">
+                    <strong>Winner:</strong> User {winner.winner_id} won with ${winner.winning_amount}
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
