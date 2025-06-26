@@ -30,6 +30,27 @@ PROTECTED_ROUTES = [
     "/bids"
 ]
 
+@app.get("/")
+async def root():
+    """API Gateway root endpoint with service information"""
+    return {
+        "message": "Real-Time Auction Platform API Gateway",
+        "version": "1.0.0",
+        "services": {
+            "user_service": "http://localhost:8001",
+            "auction_service": "http://localhost:8002", 
+            "bid_service": "http://localhost:8003"
+        },
+        "endpoints": {
+            "documentation": "http://localhost:8000/docs",
+            "health": "http://localhost:8000/health",
+            "auctions": "http://localhost:8000/auctions",
+            "register": "http://localhost:8000/register",
+            "login": "http://localhost:8000/login"
+        },
+        "frontend": "http://localhost:3000"
+    }
+
 def requires_auth(path: str, method: str) -> bool:
     """Check if a route requires authentication"""
     if method == "GET" and path.startswith("/auctions"):
@@ -117,6 +138,7 @@ async def get_auction(auction_id: int, request: Request):
 @app.post("/auctions")
 async def create_auction(request: Request, authorization: str = Header(...)):
     await validate_token(authorization)
+    
     result = await forward_request(
         SERVICES["auction"], 
         "/auctions", 
@@ -129,6 +151,7 @@ async def create_auction(request: Request, authorization: str = Header(...)):
 @app.delete("/auctions/{auction_id}")
 async def delete_auction(auction_id: int, request: Request, authorization: str = Header(...)):
     await validate_token(authorization)
+    
     result = await forward_request(
         SERVICES["auction"], 
         f"/auctions/{auction_id}", 
@@ -141,6 +164,7 @@ async def delete_auction(auction_id: int, request: Request, authorization: str =
 @app.patch("/auctions/{auction_id}/status")
 async def update_auction_status(auction_id: int, request: Request, authorization: str = Header(...)):
     await validate_token(authorization)
+    
     result = await forward_request(
         SERVICES["auction"], 
         f"/auctions/{auction_id}/status", 
@@ -158,6 +182,7 @@ async def auto_update_auction_status(request: Request):
 @app.post("/bids")
 async def place_bid(request: Request, authorization: str = Header(...)):
     await validate_token(authorization)
+    
     result = await forward_request(
         SERVICES["bid"], 
         "/bids", 

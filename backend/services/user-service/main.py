@@ -22,6 +22,22 @@ app.add_middleware(
 
 DATABASE = "users.db"
 
+@app.get("/")
+async def root():
+    """User Service root endpoint"""
+    return {
+        "service": "User Service",
+        "version": "1.0.0",
+        "port": 8001,
+        "endpoints": {
+            "health": "/health",
+            "register": "/register",
+            "login": "/login",
+            "get_user": "/users/{user_id}"
+        },
+        "note": "Use the API Gateway at http://localhost:8000 for external access"
+    }
+
 def init_db():
     conn = sqlite3.connect(DATABASE)
     conn.execute("""

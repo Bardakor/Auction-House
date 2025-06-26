@@ -25,6 +25,26 @@ app.add_middleware(
 DATABASE = "auctions.db"
 BID_SERVICE_URL = "http://localhost:8003"
 
+@app.get("/")
+async def root():
+    """Auction Service root endpoint"""
+    return {
+        "service": "Auction Service",
+        "version": "1.0.0",
+        "port": 8002,
+        "endpoints": {
+            "health": "/health",
+            "get_auctions": "/auctions",
+            "get_auction": "/auctions/{auction_id}",
+            "create_auction": "/auctions",
+            "delete_auction": "/auctions/{auction_id}",
+            "update_status": "/auctions/{auction_id}/status",
+            "auto_update": "/auctions/manage/auto-update-status",
+            "get_winner": "/auctions/{auction_id}/winner"
+        },
+        "note": "Use the API Gateway at http://localhost:8000 for external access"
+    }
+
 def init_db():
     conn = sqlite3.connect(DATABASE)
     conn.execute("""
